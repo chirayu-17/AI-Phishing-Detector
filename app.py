@@ -87,4 +87,4 @@ if st.button("🔍 START SECURITY SCAN"):
 
 # 9. Footer
 st.divider()
-st.caption("Developed by Chirayu Patil | Powered by Random Forest Machine Learning")
+st.caption("Developed by Chirayu Patil ")
