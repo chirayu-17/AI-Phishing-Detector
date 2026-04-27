@@ -4,87 +4,75 @@ import time
 import os
 from feature_logic import extract_all_features
 
-# 1. Page Configuration
+# Page Config
 st.set_page_config(page_title="PhishGuard AI", page_icon="🛡️", layout="centered")
 
-# 2. Professional "Cyber" Styling (Fixes the previous TypeError)
+# Styling
 st.markdown("""
     <style>
     .main { background-color: #0e1117; color: #ffffff; }
-    .stButton>button { 
-        width: 100%; 
-        border-radius: 5px; 
-        height: 3em; 
-        background-color: #ff4b4b; 
-        color: white; 
-        font-weight: bold;
-    }
-    .stTextInput>div>div>input {
-        background-color: #1a1c24;
-        color: white;
-    }
+    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #ff4b4b; color: white; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Header Section
 st.title("🛡️ PhishGuard AI")
 st.subheader("Enterprise-Grade URL Threat Analysis")
-st.write("Analyze links in real-time using our trained Machine Learning engine.")
 
-# 4. Load the Trained Model
-# We use a try-except block to handle cases where the file isn't found
+# Load Model
 model_path = os.path.join("models", "phishing_model.pkl")
 try:
     model = joblib.load(model_path)
-except Exception as e:
-    st.error("⚠️ Model file not found. Please run 'train_engine.py' first.")
+except:
+    st.error("⚠️ Model not found.")
     st.stop()
 
-# 5. User Input
 target_url = st.text_input("Paste URL for deep-scan:", placeholder="https://secure-login-portal.com")
 
-# 6. Scan Logic
 if st.button("🔍 START SECURITY SCAN"):
     if target_url:
-        with st.status("Initializing Neural Engine...", expanded=True) as status:
-            # Feature Extraction
-            st.write("Extracting URL metadata...")
+        with st.status("Analyzing URL Architecture...", expanded=True) as status:
             features = extract_all_features(target_url)
-            time.sleep(0.4)
             
-            # Prediction Logic
-            st.write("Running heuristic analysis...")
-            # We use predict_proba to get the confidence percentage
+            # --- SECURITY OVERRIDE LAYER (Heuristics) ---
+            # features[8] is 'is_tunneled'
+            # features[9] is 'has_keyword'
+            is_high_risk_tunnel = features[8] == 1
+            is_brand_impersonation = features[9] == 1
+            
+            # AI Prediction
             probabilities = model.predict_proba([features])[0]
-            prediction = model.predict([features])[0]
+            ai_prediction = model.predict([features])[0]
             
-            # Calculate Confidence based on the predicted class
-            confidence = round(probabilities[prediction] * 100, 2)
-            
-            time.sleep(0.4)
+            # Logic: If it's a tunnel, it's DANGER (Override AI)
+            if is_high_risk_tunnel:
+                final_prediction = 1
+                confidence = 100.0
+                reason = "Tunneling Service Detected (High Risk Bypass)"
+            else:
+                final_prediction = ai_prediction
+                confidence = round(probabilities[final_prediction] * 100, 2)
+                reason = "Machine Learning Pattern Analysis"
+
+            time.sleep(0.6)
             status.update(label="Scan Complete!", state="complete", expanded=False)
 
-        # 7. Results Display
+        # Display Results
         st.divider()
-        if prediction == 1:
-            st.error(f"🚨 DANGER: HIGH RISK DETECTED ({confidence}% Confidence)")
-            st.markdown("### Threat Assessment")
-            st.write("This URL exhibits patterns highly consistent with **Phishing** and **Credential Harvesting** sites.")
+        if final_prediction == 1:
+            st.error(f"🚨 DANGER: HIGH RISK DETECTED ({confidence}%)")
+            st.warning(f"Reason: {reason}")
         else:
-            st.success(f"✅ CLEAN: NO THREAT FOUND ({confidence}% Confidence)")
-            st.markdown("### Safety Assessment")
-            st.write("The structural analysis indicates this URL is likely **Legitimate** and safe to visit.")
+            st.success(f"✅ CLEAN: NO THREAT FOUND ({confidence}%)")
 
-        # 8. Technical Breakdown metrics
+        # Fixed Forensic Data (Matching the 10 features in order)
         with st.expander("📊 View Forensic Data"):
             col1, col2 = st.columns(2)
             col1.metric("URL Length", features[0])
             col1.metric("Subdomain Depth", features[4])
-            col2.metric("HTTPS Protocol", "Secure" if features[7] == 1 else "Insecure")
-            col2.metric("Suspicious TLD", "Yes" if features[5] == 1 else "No")
+            col1.metric("Tunneling Service", "DETECTED" if features[8] == 1 else "None")
+            
+            col2.metric("HTTPS Protocol", "Secure" if features[5] == 1 else "Insecure")
+            col2.metric("Suspicious TLD", "Yes" if features[6] == 1 else "No")
+            col2.metric("Keyword Flag", "Found" if features[9] == 1 else "Clean")
     else:
-        st.warning("Please enter a URL to begin the scan.")
-
-# 9. Footer
-st.divider()
-st.caption("Developed by Chirayu Patil ")
+        st.warning("Please enter a URL.")
