@@ -7,7 +7,7 @@
 
 A high-performance cybersecurity tool that uses Machine Learning to detect phishing URLs in real-time. By analyzing the "DNA" of a URL, this tool identifies malicious patterns before a user clicks.
 
-🔗 **[Live Demo: Try PhishGuard AI Here]((https://rayu-phish-guard.streamlit.app/))**
+🔗 **[Live Demo: Try PhishGuard AI Here]([https://ai-phishing-detector-ih4hlbj7pi2fvp4dkhwaxe.streamlit.app/](https://rayu-phish-guard.streamlit.app/))**
 
 ---
 
