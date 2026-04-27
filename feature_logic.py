@@ -2,28 +2,31 @@ import tldextract
 import re
 
 def extract_all_features(url):
-    """
-    This function takes a raw URL string and returns a list of 5 numbers.
-    AI models only understand numbers, not text.
-    """
-    
-    # 1. URL Length: Phishing URLs are often very long to hide the real domain.
+    # 1. Basics
     length = len(url)
-    
-    # 2. Presence of '@': Phishers use '@' to redirect to a different site.
-    # 1 if present, 0 if not.
-    has_at = 1 if "@" in url else 0
-    
-    # 3. Dot Count: Phishing sites often have many subdomains (e.g., login.bank.secure.com)
     dots = url.count(".")
     
-    # 4. HTTPS Check: Many old phishing sets look for 'https' vs 'http'
+    # 2. Character Analysis (Phishers love hyphens and special chars)
+    hyphens = url.count("-")
+    at_symbol = 1 if "@" in url else 0
+    
+    # 3. Subdomain Depth
+    # e.g., "login.bank.secure.com" has 3 parts before the TLD
+    extracted = tldextract.extract(url)
+    subdomain_count = len(extracted.subdomain.split('.')) if extracted.subdomain else 0
+    
+    # 4. Suspicious TLD check
+    # Many phishing sites use cheap/free domains like .xyz, .tk, .top, .ga
+    suspicious_tlds = [".xyz", ".tk", ".top", ".ga", ".ml", ".cf"]
+    is_suspicious_tld = 1 if any(tld in url for tld in suspicious_tlds) else 0
+    
+    # 5. URL Shortener Check
+    # Hackers hide links behind bit.ly or tinyurl
+    shorteners = ["bit.ly", "goo.gl", "tinyurl", "t.co", "rebrand.ly"]
+    is_shortened = 1 if any(s in url for s in shorteners) else 0
+
+    # 6. Protocol
     is_https = 1 if url.startswith("https") else 0
-    
-    # 5. Numerical IP: Does the URL use an IP address instead of a name?
-    # Uses a 'Regular Expression' to find patterns like 192.168.1.1
-    ip_pattern = r'\d+\.\d+\.\d+\.\d+'
-    has_ip = 1 if re.search(ip_pattern, url) else 0
-    
-    # Return all 5 values as a clean list
-    return [length, has_at, dots, is_https, has_ip]
+
+    # Return the NEW list (now 8 features)
+    return [length, dots, hyphens, at_symbol, subdomain_count, is_suspicious_tld, is_shortened, is_https]
